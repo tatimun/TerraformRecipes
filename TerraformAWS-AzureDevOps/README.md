@@ -12,11 +12,11 @@ The state its saved in a S3 which is previously created as for the DynamoTable, 
 
 4. Run the pipeline, it will ask for approvation once the plan is already done, it will show in the extensions vars 
 
-![alt text](./image.png)
+![alt text](https://github.com/tatimun/TerraformRecipes/blob/main/TerraformAWS-AzureDevOps/image.png)
 
 >**Status: In process**
 
 Next steps:
 
 Divide into AzureDevOps Pipeline for init and apply 
-Release for Apply
+Release for Apply and add the destroy option only to approve people
