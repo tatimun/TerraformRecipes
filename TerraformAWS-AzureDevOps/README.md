@@ -19,4 +19,4 @@ The state its saved in a S3 which is previously created as for the DynamoTable, 
 Next steps:
 
 Divide into AzureDevOps Pipeline for init and apply 
-Release for Apply
+Release for Apply and add the destroy option only to approve people
