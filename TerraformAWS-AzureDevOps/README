@@ -12,7 +12,7 @@ The state its saved in a S3 which is previously created as for the DynamoTable, 
 
 4. Run the pipeline, it will ask for approvation once the plan is already done, it will show in the extensions vars 
 
-![alt text](image.png)
+![alt text](./image.png)
 
 >**Status: In process**
 
