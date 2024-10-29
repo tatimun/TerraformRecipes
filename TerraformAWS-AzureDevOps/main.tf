@@ -1,6 +1,5 @@
 provider "aws" {
   region  = var.aws_region
-  profile = "default"
 }
 
 data "aws_vpc" "existing_vpc" {
@@ -88,7 +87,7 @@ resource "aws_instance" "lab_enviroment" {
 
 
 
-
+/*
 resource "aws_s3_bucket" "bucket-terraform" {
   bucket = "buckettatitestmameluco" 
   acl    = "private"
@@ -113,4 +112,4 @@ resource "aws_dynamodb_table" "terraform_locks" {
     name = "LockID"
     type = "S"
   }
-}
+}*/
