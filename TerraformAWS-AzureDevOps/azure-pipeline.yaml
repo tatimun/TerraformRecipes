@@ -1,0 +1,200 @@
+trigger:
+  - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+resources:
+  repositories:
+    - repository: essentials
+      type: git
+      name: TerraformDeploy
+
+variables:
+  essentialsRepoName: $[ resources.repositories.essentials.name ]
+  Git.UserEmail: $(Build.RequestedForEmail)
+  Git.UserName: $(Build.RequestedFor)
+  TERRAFORM_VERSION: '1.9.7'
+
+stages:
+  - stage: Init
+    displayName: "Terraform Init"
+    jobs:
+      - job: Init
+        displayName: "Initialize Terraform"
+        steps:
+          - checkout: self
+
+          # Instalar Terraform
+          - task: Bash@3
+            displayName: 'Install Terraform'
+            inputs:
+              targetType: 'inline'
+              script: |
+                sudo apt-get update && sudo apt-get install -y wget unzip
+                wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+                unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+                sudo mv terraform /usr/local/bin/
+                terraform -version
+
+          # Inicializar Terraform
+          - task: Bash@3
+            displayName: 'Terraform Init - Local Backend'
+            inputs:
+              targetType: 'inline'
+              script: |
+                cd $(Build.SourcesDirectory)
+                terraform init -backend=false
+
+  - stage: Validate
+    displayName: "Terraform Validate"
+    dependsOn: Init
+    jobs:
+      - job: Validate
+        displayName: "Validate Terraform Configuration"
+        steps:
+          - checkout: self
+
+          # Validar configuración de Terraform
+          - task: Bash@3
+            displayName: 'Install Terraform and Validate Configuration'
+            inputs:
+              targetType: 'inline'
+              script: |
+                sudo apt-get update && sudo apt-get install -y wget unzip
+                wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+                unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+                sudo mv terraform /usr/local/bin/
+                terraform -version
+                cd $(Build.SourcesDirectory)
+                terraform init -backend=false
+                terraform validate
+
+  - stage: Plan
+    displayName: "Terraform Plan"
+    dependsOn: Validate
+    jobs:
+      - job: Plan
+        displayName: "Generate Terraform Plan"
+        steps:
+          - checkout: self
+
+          # Instalar Terraform
+          - task: Bash@3
+            displayName: 'Install Terraform'
+            inputs:
+              targetType: 'inline'
+              script: |
+                sudo apt-get update && sudo apt-get install -y wget unzip
+                wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+                unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+                sudo mv terraform /usr/local/bin/
+                terraform -version
+
+          # Inicializar Terraform
+          - task: Bash@3
+            displayName: 'Terraform Init for Plan'
+            inputs:
+              targetType: 'inline'
+              script: |
+                cd $(Build.SourcesDirectory)
+                terraform init -backend=false
+
+          # Generar el plan
+          - task: TerraformTaskV4@4
+            displayName: 'Terraform Plan - Generate Plan File'
+            inputs:
+              provider: 'aws'
+              command: 'plan'
+              commandOptions: '-out=tfplan'
+              environmentServiceNameAWS: 'AWSForTerra'
+              workingDirectory: '$(Build.SourcesDirectory)'
+
+          # Publicar los artefactos tfplan, .terraform y .terraform.lock.hcl
+          - task: PublishPipelineArtifact@1
+            displayName: "Publish Terraform Artifacts"
+            inputs:
+              targetPath: '$(Build.SourcesDirectory)/tfplan'
+              artifactName: 'tfplan'
+              publishLocation: 'pipeline'
+          - task: PublishPipelineArtifact@1
+            displayName: "Publish Terraform Lock and Provider Directory"
+            inputs:
+              targetPath: '$(Build.SourcesDirectory)/.terraform'
+              artifactName: 'terraform-providers'
+              publishLocation: 'pipeline'
+          - task: PublishPipelineArtifact@1
+            displayName: "Publish Terraform Lock File"
+            inputs:
+              targetPath: '$(Build.SourcesDirectory)/.terraform.lock.hcl'
+              artifactName: 'terraform-lock'
+              publishLocation: 'pipeline'
+
+  - stage: Approval
+    displayName: "Manual Approval"
+    dependsOn: Plan
+    jobs:
+      - job: Approval
+        displayName: "Wait for Manual Approval"
+        pool: server
+        steps:
+          - task: ManualValidation@0
+            displayName: "Approve Terraform Apply"
+            timeoutInMinutes: 60
+            inputs:
+              notifyUsers: 'apuntatis@outlook.com'
+              instructions: 'Please review the Terraform plan and approve to proceed with apply.'
+              onTimeout: 'reject'
+
+  - stage: Apply
+    displayName: "Terraform Apply"
+    dependsOn: Approval
+    jobs:
+      - job: Apply
+        displayName: "Apply Infrastructure"
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+          - checkout: essentials
+            persistCredentials: true
+
+          # Instalar Terraform
+          - task: Bash@3
+            displayName: 'Install Terraform'
+            inputs:
+              targetType: 'inline'
+              script: |
+                sudo apt-get update && sudo apt-get install -y wget unzip
+                wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+                unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip
+                sudo mv terraform /usr/local/bin/
+                terraform -version
+
+          # Descargar los artefactos
+          - task: DownloadPipelineArtifact@2
+            displayName: "Download Terraform Plan Artifact"
+            inputs:
+              artifactName: 'tfplan'
+              targetPath: '$(Build.SourcesDirectory)'
+          - task: DownloadPipelineArtifact@2
+            displayName: "Download Terraform Lock File"
+            inputs:
+              artifactName: 'terraform-lock'
+              targetPath: '$(Build.SourcesDirectory)'
+          - task: DownloadPipelineArtifact@2
+            displayName: "Download Terraform Providers Directory"
+            inputs:
+              artifactName: 'terraform-providers'
+              targetPath: '$(Build.SourcesDirectory)/.terraform'
+
+          # Aplicar el plan con el directorio de proveedores y lock file
+          - task: Bash@3
+            displayName: 'Apply Terraform Plan'
+            inputs:
+              targetType: 'inline'
+              script: |
+                cd $(Build.SourcesDirectory)
+                terraform init -backend=false
+                terraform apply -auto-approve tfplan
+
