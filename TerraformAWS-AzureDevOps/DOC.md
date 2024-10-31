@@ -9,48 +9,57 @@ Variables
 Defines variables for the repository name, Git username and email, and Terraform version (1.9.7).
 
 # Stages
-Init - Initialize Terraform
+- **Init** - Initialize Terraform
 
-Description: Initializes Terraform without backend. Steps:
+    Description: Initializes Terraform without backend. Steps:
 
-# Installs Terraform.
-Runs terraform init -backend=false to initialize without backend.
+    Installs Terraform.
 
-Validate - Configuration Validation
+    Runs terraform init -backend=false to initialize without backend.
 
-Description: Validates Terraform configuration.
+---
 
-Steps:
+- Validate - Configuration Validation
 
-a. Installs Terraform.
+    Description: Validates Terraform configuration.
 
-b. Runs terraform validate to ensure configuration is valid.
+    Steps:
 
-Plan - Generate Plan
+    a. Installs Terraform.
+
+    b. Runs terraform validate to ensure configuration is valid.
+
+---
+
+ **Plan** - Generate Plan
 Description: Generates the Terraform deployment plan and saves it as an artifact.
 
-Steps:
+- Steps:
 
-a. Installs Terraform.
+    a. Installs Terraform.
 
-b. Runs terraform plan -out=tfplan to generate the plan file.
+    b. Runs terraform plan -out=tfplan to generate the plan file.
 
-c. Publishes the Terraform artifacts (tfplan, .terraform, .terraform.lock.hcl) for use in subsequent stages.
+    c. Publishes the Terraform artifacts (tfplan, .terraform, .terraform.lock.hcl) for use in subsequent stages.
 
-Approval - Manual Approval
+---
+
+**Approval** - Manual Approval
 
 Description: Waits for manual approval to proceed with deployment.
 
-Steps:
+- Steps:
 
 a. Waits for approval.
 
 Timeout of 60 minutes.
 
-Apply - Apply Infrastructure
+---
+
+**Apply** - Apply Infrastructure
 Description: Applies infrastructure based on the approved plan.
 
-Steps:
+- Steps:
 
 a. Downloads published artifacts (tfplan, terraform-lock, terraform-providers).
 
