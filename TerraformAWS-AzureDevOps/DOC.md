@@ -1,52 +1,57 @@
-### Configuración General
-- Trigger: Se ejecuta en la rama main.
-- Pool: Utiliza una máquina virtual ubuntu-latest.
-- Recursos: Repositorio como fuente de configuración de infraestructura.
+# General Configuration
+Trigger: Executes on the main branch.
 
-### Variables
-Define variables para el nombre del repositorio, usuario y email de Git, y versión de Terraform (1.9.7).
+Pool: Uses an ubuntu-latest virtual machine.
 
-### Stages
-1. ***Init*** - Inicializar Terraform
-Descripción: Inicializa Terraform sin backend.
-Pasos:
-Instala Terraform.
-Ejecuta terraform init -backend=false para inicialización sin backend.
-2. **Validate** - Validación de Configuración
-Descripción: Valida la configuración de Terraform.
+Resources: Repository as the source of infrastructure configuration.
 
-    Pasos:
+Variables
+Defines variables for the repository name, Git username and email, and Terraform version (1.9.7).
 
-    a. Instala Terraform.
+# Stages
+Init - Initialize Terraform
 
-    b. Ejecuta terraform validate para asegurar que la configuración sea válida.
+Description: Initializes Terraform without backend. Steps:
 
+# Installs Terraform.
+Runs terraform init -backend=false to initialize without backend.
 
-3. **Plan** - Generación de Plan
-Descripción: Genera el plan de despliegue de Terraform y lo guarda como artefacto.
+Validate - Configuration Validation
 
-    Pasos:
+Description: Validates Terraform configuration.
 
-    a. Instala Terraform.
-  
-    b. Ejecuta terraform plan -out=tfplan para generar el archivo de plan.
-  
-    c. Publica los artefactos de Terraform (tfplan, .terraform, .terraform.lock.hcl) para usarlos en etapas posteriores.
+Steps:
 
-4. **Approval** - Aprobación Manual
+a. Installs Terraform.
 
-    Descripción: Espera una aprobación manual para proceder con el despliegue.
+b. Runs terraform validate to ensure configuration is valid.
 
-    Pasos:
+Plan - Generate Plan
+Description: Generates the Terraform deployment plan and saves it as an artifact.
 
-    a. Espera aprobacion
-    Timeout de 60 minutos.
+Steps:
 
-5. **Apply** - Aplicación de la Infraestructura
-Descripción: Aplica la infraestructura basada en el plan aprobado.
+a. Installs Terraform.
 
-Pasos:
+b. Runs terraform plan -out=tfplan to generate the plan file.
 
-  a. Descarga los artefactos publicados (tfplan, terraform-lock, terraform-providers).
-  
-  b. Ejecuta terraform apply -auto-approve tfplan para aplicar la infraestructura.
+c. Publishes the Terraform artifacts (tfplan, .terraform, .terraform.lock.hcl) for use in subsequent stages.
+
+Approval - Manual Approval
+
+Description: Waits for manual approval to proceed with deployment.
+
+Steps:
+
+a. Waits for approval.
+
+Timeout of 60 minutes.
+
+Apply - Apply Infrastructure
+Description: Applies infrastructure based on the approved plan.
+
+Steps:
+
+a. Downloads published artifacts (tfplan, terraform-lock, terraform-providers).
+
+b. Runs terraform apply -auto-approve tfplan to apply the infrastructure.
